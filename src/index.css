@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #183B68;
+  --color-cta: #F3B557;
+  --color-accent: #7EC5B3;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101922;
+
+  --font-display: "Inter", sans-serif;
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24;
+  }
+}

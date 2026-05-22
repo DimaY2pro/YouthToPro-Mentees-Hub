@@ -1,12 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { logout } from '../lib/firebase';
+import { logout, ADMIN_EMAIL } from '../lib/firebase';
 
 interface SidebarProps {
   user: User;
 }
 
-const navItems = [
+const baseNavItems = [
   { to: '/',        icon: 'home',     label: 'Home' },
   { to: '/modules', icon: 'work',     label: 'Career Modules' },
   { to: '/profile', icon: 'person',   label: 'My Profile' },
@@ -14,8 +14,12 @@ const navItems = [
 ];
 
 export default function Sidebar({ user }: SidebarProps) {
-  const location  = useLocation();
-  const navigate  = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const navItems = user.email === ADMIN_EMAIL
+    ? [...baseNavItems, { to: '/admin', icon: 'admin_panel_settings', label: 'Admin Panel' }]
+    : baseNavItems;
 
   const initials = user.displayName
     ? user.displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -28,7 +32,7 @@ export default function Sidebar({ user }: SidebarProps) {
 
   return (
     <aside className="hidden md:flex w-64 bg-[#183B68] flex-col justify-between h-full p-4 shrink-0 text-white">
-      {/*── User info ───────────────────────────────────── */}
+      {/* ── User info ───────────────────────────────────── */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 pb-4 border-b border-white/10">
           {user.photoURL ? (
@@ -46,7 +50,9 @@ export default function Sidebar({ user }: SidebarProps) {
             <span className="text-white text-sm font-bold truncate">
               {user.displayName ?? user.email?.split('@')[0] ?? 'Mentee'}
             </span>
-            <span className="text-white/60 text-xs">Mentee · YouthToPro</span>
+            <span className="text-white/60 text-xs">
+              {user.email === ADMIN_EMAIL ? 'Admin · YouthToPro' : 'Mentee · YouthToPro'}
+            </span>
           </div>
         </div>
 
@@ -61,16 +67,12 @@ export default function Sidebar({ user }: SidebarProps) {
                 key={to}
                 to={to}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${
-                  isActive
-                    ? 'bg-[#F3B557] text-[#183B68]'
-                    : 'text-white/80 hover:bg-white/10'
+                  isActive ? 'bg-[#F3B557] text-[#183B68]' : 'text-white/80 hover:bg-white/10'
                 }`}
               >
-                <span
-                  className={`material-symbols-outlined text-[20px] transition-colors ${
-                    isActive ? 'text-[#183B68]' : 'text-white/60 group-hover:text-[#F3B557]'
-                  }`}
-                >
+                <span className={`material-symbols-outlined text-[20px] transition-colors ${
+                  isActive ? 'text-[#183B68]' : 'text-white/60 group-hover:text-[#F3B557]'
+                }`}>
                   {icon}
                 </span>
                 <span className="text-sm font-medium">{label}</span>

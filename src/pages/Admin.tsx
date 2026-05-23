@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
 import {
@@ -132,12 +132,13 @@ export default function Admin({ user }: Props) {
         ) : (
           <div className="flex flex-col gap-3">
             {filtered.map((u) => (
-              <UserRow
-                key={u.uid}
-                record={u}
-                actionKey={actionKey}
-                onAction={handleAction}
-              />
+              <React.Fragment key={u.uid}>
+                <UserRow
+                  record={u}
+                  actionKey={actionKey}
+                  onAction={handleAction}
+                />
+              </React.Fragment>
             ))}
           </div>
         )}

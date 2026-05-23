@@ -6,14 +6,11 @@
 import { useState, useEffect } from 'react';
 import {
   auth,
-  loginWithGoogle,
-  logout,
-  registerWithEmail,
   loginWithEmail,
   sendPasswordReset,
   createUserDoc,
-  subscribeUserStatus,
-  ADMIN_EMAIL,
+  googleSignInAndCreateProfile,
+  registerAndCreateProfile,
 } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
@@ -31,44 +28,11 @@ import CareerDevelopment from './pages/CareerDevelopment';
 import Profile          from './pages/Profile';
 import AccountSettings  from './pages/AccountSettings';
 import PendingApproval  from './pages/PendingApproval';
-import Admin            from './pages/Admin';
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type UserStatus = 'loading' | 'pending' | 'approved' | 'rejected' | null;
-
-// ── Route guards ─────────────────────────────────────────────────────────────
-
-function AppLoader() {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-[#f6f7f8]">
-      <span className="material-symbols-outlined animate-spin text-[40px] text-[#7EC5B3]">
-        progress_activity
-      </span>
-    </div>
-  );
-}
-
-function RequireApproved({
-  user, userStatus, children,
-}: {
-  user: User | null; userStatus: UserStatus; children: React.ReactNode;
-}) {
-  if (userStatus === 'loading') return <AppLoader />;
-  if (!user || userStatus === null) return <Navigate to="/" replace />;
-  if (userStatus !== 'approved') return <Navigate to="/pending" replace />;
-  return <>{children}</>;
-}
-
-function RequireAdmin({
-  user, children,
-}: {
-  user: User | null; children: React.ReactNode;
-}) {
-  if (!user) return <Navigate to="/" replace />;
-  if (user.email !== ADMIN_EMAIL) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
+import AdminConsole     from './pages/AdminConsole';
+import SetupSuperAdmin  from './pages/SetupSuperAdmin';
+import LetterOfIntent   from './pages/LetterOfIntent';
+import { ApprovedRoute, AdminRoute } from './components/ProtectedRoute';
+import { useUserProfile } from './hooks/useUserProfile';
 
 // ── Home / Auth page ─────────────────────────────────────────────────────────
 
@@ -103,8 +67,8 @@ function Home({
       } else {
         if (!termsAccepted) { setError('Please accept the Terms of Service and Privacy Policy'); return; }
         const displayName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
-        await registerWithEmail(email, password, displayName || undefined);
-        navigate('/modules');
+        await registerAndCreateProfile(email, password, displayName || undefined);
+        navigate('/pending');
       }
     } catch (err: any) {
       if (err.code === 'auth/operation-not-allowed') {
@@ -135,73 +99,55 @@ function Home({
     }
   };
 
-  return (
-    <>
-      {/* ── Hero ──────────────────────────────────────────── */}
+  // ── Logged-in view ────────────────────────────────────────────────────────
+  if (user) {
+    return (
       <div className="layout-container flex flex-col">
-        <div className="px-4 md:px-10 flex flex-1 justify-center py-5">
+        <div className="px-4 md:px-10 flex flex-1 justify-center py-10">
           <div className="layout-content-container flex flex-col w-full max-w-[1200px] flex-1">
-            <div className="@container">
-              <div className="flex flex-col gap-6 py-10 lg:gap-12 lg:flex-row lg:items-center">
-                <div className="flex flex-col gap-6 lg:w-1/2 lg:pr-10">
-                  <div className="flex flex-col gap-4 text-left">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-bold text-accent dark:border-teal-900/30 dark:bg-teal-900/20">
-                      <span className="material-symbols-outlined text-[16px]">verified</span>
-                      <span className="text-teal-700 dark:text-teal-300">Bridging Education &amp; Employment</span>
-                    </div>
-                    <h1 className="text-primary dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl lg:text-6xl">
-                      Launch Your Career with{' '}
-                      <span className="text-cta">YouthToPro Hub</span>
-                    </h1>
-                    <h2 className="text-slate-600 dark:text-slate-300 text-base font-normal leading-relaxed md:text-lg">
-                      Connecting ambitious youth with experienced professionals. Join a thriving
-                      community where mentorship transforms potential into professional success.
-                    </h2>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={scrollToRegister}
-                      className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-cta hover:bg-yellow-500 text-primary text-base font-bold leading-normal tracking-[0.015em] transition-all shadow-md hover:shadow-lg"
-                    >
-                      <span className="truncate">Join as Mentee</span>
-                    </button>
-                    <button
-                      disabled
-                      className="flex items-center justify-center overflow-hidden rounded-lg h-12 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-base font-bold leading-normal tracking-[0.015em] transition-all opacity-50 cursor-not-allowed"
-                      title="Mentor registration is coming soon"
-                    >
-                      <span className="truncate">Join as Mentor</span>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-                    <div className="flex -space-x-2">
-                      {[
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuD4-Fp-MnmPFWEszRk5rGootOw5g4yHjr8BpUy3ASoeBgrZA6UpADhZpxoFn-dO7OdL2IH8DwLztcEzrnY4abQ9uh8nzvOArXhyu0fnKtyA6B2TbAiZqncbOV-pTypd3LS_UriNQ0WdGgyhDtrLpHERxnj-at1rbiqcdELkKizsMgaamvlxOhAoOYoS5KsVpy9tlYRLe-nopG7dsyYZYl5gjSH6DKGGujSeCo6j3vtBFnzH0nFAhkWUTVgHXPPPw-17QyJ8NkDAzp8',
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuBlyA7Zg31GSbQZpWB1Z9i0qxxJfnJgfHNED0AmpzluOgvd30I1A1MmWrcBLfMP5MBfQlvBkcZu8N-8AHwaqzeELG_mKJsdJRP_dJv9avItgKSHzIGkf2787PD4i1rXUz8zODV-twkPmjhsC5vgv2EQ_5Qo3Ww_gTfqtDUc6rKdquWrC320RKTRblqvTonM-gv_6QzJGdlNnO-WTSDSCzJKsDN-7H9wDNH6dqZ2b1VtqYGXToCZCeL6ONwzYHqZbb6GN_ViWiaySq4',
-                        'https://lh3.googleusercontent.com/aida-public/AB6AXuBeDaqbjRbAm6BH7oCH2v8dlYmGzEJ-CElTD04m6VJWx0-25ErnrrFkzZROLWvQs3-S7WzulKrNtr0XPSyIbyVTRGtyqVs9FRo5CK2WNCxb-1yYnQqcK46kBpGpHwuIeASqMcQGgUnZhrgQFGHhLkTlz4luTsm05pGQhpE8m4B2xzXy8Eq7bkz2mC0MZCjjwouRijgY-EQaqPss7W9xG8jVupNqq83IvnjGVBgJGMHUMITBsb-KvZQ4Rbex7g7ba0PBC89eFV3izy4',
-                      ].map((src, i) => (
-                        <div
-                          key={i}
-                          className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 bg-center bg-cover"
-                          style={{ backgroundImage: `url("${src}")` }}
-                        />
-                      ))}
-                    </div>
-                    <p>Join 2,000+ members today</p>
-                  </div>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-12">
+              {/* Left: text */}
+              <div className="flex flex-col gap-6 lg:w-1/2 lg:pr-10">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-bold dark:border-teal-900/30 dark:bg-teal-900/20">
+                  <span className="material-symbols-outlined text-[16px] text-teal-600">verified</span>
+                  <span className="text-teal-700 dark:text-teal-300">Welcome back!</span>
                 </div>
-                <div className="lg:w-1/2 mt-8 lg:mt-0 relative">
-                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/30 rounded-full blur-2xl" />
-                  <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-cta/30 rounded-full blur-2xl" />
-                  <div
-                    className="relative w-full aspect-[4/3] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl overflow-hidden"
-                    style={{ backgroundImage: 'url("/main%20pic.png")' }}
+                <h1 className="text-primary dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
+                  Good to see you,{' '}
+                  <span className="text-cta">{user.displayName?.split(' ')[0] || 'Mentee'}</span>
+                </h1>
+                <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
+                  Continue your journey through the YouthToPro curriculum and build your professional toolkit.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to="/modules"
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-lg h-12 px-6 bg-cta hover:bg-yellow-500 text-primary text-base font-bold transition-all shadow-md hover:shadow-lg"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent" />
-                    <div className="absolute bottom-0 left-0 p-6 text-white">
-                      <p className="font-bold text-lg">"The mentorship I received changed my career trajectory completely."</p>
-                      <p className="text-sm opacity-90 mt-1">— Sarah J., Product Designer</p>
-                    </div>
+                    <span className="material-symbols-outlined text-[20px]">dashboard</span>
+                    Go to Dashboard
+                  </Link>
+                  <Link
+                    to="/profile"
+                    className="flex items-center justify-center gap-2 rounded-lg h-12 px-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-primary dark:text-white text-base font-bold transition-all hover:border-primary"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">person</span>
+                    My Profile
+                  </Link>
+                </div>
+              </div>
+              {/* Right: hero image */}
+              <div className="lg:w-1/2 mt-8 lg:mt-0 relative">
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-accent/30 rounded-full blur-2xl" />
+                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-cta/30 rounded-full blur-2xl" />
+                <div
+                  className="relative w-full aspect-[4/3] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl overflow-hidden"
+                  style={{ backgroundImage: 'url("/mainpic.png")' }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6 text-white">
+                    <p className="font-bold text-lg">"The mentorship I received changed my career trajectory completely."</p>
+                    <p className="text-sm opacity-90 mt-1">— Sarah J., Product Designer</p>
                   </div>
                 </div>
               </div>
@@ -209,11 +155,64 @@ function Home({
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* ── Auth card ──────────────────────────────────────── */}
-      <div className="layout-container flex flex-col py-16" id="register">
-        <div className="px-4 md:px-10 flex flex-1 justify-center">
-          <div className="layout-content-container flex flex-col w-full max-w-[600px] flex-1">
+  // ── Logged-out view ───────────────────────────────────────────────────────
+  return (
+    <>
+      <div className="layout-container flex flex-col">
+        <div className="px-4 md:px-10 flex flex-1 justify-center py-8">
+          <div className="layout-content-container flex flex-col w-full max-w-[1200px] flex-1">
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
+
+              {/* ── Left: hero text + image ──────────────────── */}
+              <div className="flex flex-col gap-6 lg:w-1/2">
+                <div className="flex flex-col gap-4">
+                  <div className="inline-flex w-fit items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-bold dark:border-teal-900/30 dark:bg-teal-900/20">
+                    <span className="material-symbols-outlined text-[16px] text-teal-600">verified</span>
+                    <span className="text-teal-700 dark:text-teal-300">Bridging Education &amp; Employment</span>
+                  </div>
+                  <h1 className="text-primary dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] md:text-5xl">
+                    Launch Your Career with{' '}
+                    <span className="text-cta">YouthToPro Hub</span>
+                  </h1>
+                  <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
+                    Connecting ambitious youth with experienced professionals. Join a thriving
+                    community where mentorship transforms potential into professional success.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+                  <div className="flex -space-x-2">
+                    {[
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuD4-Fp-MnmPFWEszRk5rGootOw5g4yHjr8BpUy3ASoeBgrZA6UpADhZpxoFn-dO7OdL2IH8DwLztcEzrnY4abQ9uh8nzvOArXhyu0fnKtyA6B2TbAiZqncbOV-pTypd3LS_UriNQ0WdGgyhDtrLpHERxnj-at1rbiqcdELkKizsMgaamvlxOhAoOYoS5KsVpy9tlYRLe-nopG7dsyYZYl5gjSH6DKGGujSeCo6j3vtBFnzH0nFAhkWUTVgHXPPPw-17QyJ8NkDAzp8',
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBlyA7Zg31GSbQZpWB1Z9i0qxxJfnJgfHNED0AmpzluOgvd30I1A1MmWrcBLfMP5MBfQlvBkcZu8N-8AHwaqzeELG_mKJsdJRP_dJv9avItgKSHzIGkf2787PD4i1rXUz8zODV-twkPmjhsC5vgv2EQ_5Qo3Ww_gTfqtDUc6rKdquWrC320RKTRblqvTonM-gv_6QzJGdlNnO-WTSDSCzJKsDN-7H9wDNH6dqZ2b1VtqYGXToCZCeL6ONwzYHqZbb6GN_ViWiaySq4',
+                      'https://lh3.googleusercontent.com/aida-public/AB6AXuBeDaqbjRbAm6BH7oCH2v8dlYmGzEJ-CElTD04m6VJWx0-25ErnrrFkzZROLWvQs3-S7WzulKrNtr0XPSyIbyVTRGtyqVs9FRo5CK2WNCxb-1yYnQqcK46kBpGpHwuIeASqMcQGgUnZhrgQFGHhLkTlz4luTsm05pGQhpE8m4B2xzXy8Eq7bkz2mC0MZCjjwouRijgY-EQaqPss7W9xG8jVupNqq83IvnjGVBgJGMHUMITBsb-KvZQ4Rbex7g7ba0PBC89eFV3izy4',
+                    ].map((src, i) => (
+                      <div key={i} className="h-8 w-8 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 bg-center bg-cover" style={{ backgroundImage: `url("${src}")` }} />
+                    ))}
+                  </div>
+                  <p>Join 2,000+ members today</p>
+                </div>
+                {/* Hero image — hidden on mobile to keep form above fold */}
+                <div className="hidden lg:block relative mt-2">
+                  <div className="absolute -top-4 -right-4 w-20 h-20 bg-accent/30 rounded-full blur-2xl" />
+                  <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-cta/30 rounded-full blur-2xl" />
+                  <div
+                    className="relative w-full aspect-[4/3] bg-center bg-no-repeat bg-cover rounded-2xl shadow-xl overflow-hidden"
+                    style={{ backgroundImage: 'url("/mainpic.png")' }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent" />
+                    <div className="absolute bottom-0 left-0 p-5 text-white">
+                      <p className="font-bold">"The mentorship I received changed my career trajectory completely."</p>
+                      <p className="text-sm opacity-90 mt-1">— Sarah J., Product Designer</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Right: auth form ─────────────────────────── */}
+              <div className="lg:w-1/2" id="register">
             <div className="bg-white dark:bg-[#15202b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
               <div className="px-8 pt-8 pb-4 text-center">
                 <h2 className="text-primary dark:text-white text-2xl font-bold leading-tight tracking-[-0.015em] mb-2">
@@ -330,7 +329,9 @@ function Home({
             </div>
           </div>
         </div>
+        </div>
       </div>
+    </div>
     </>
   );
 }
@@ -339,42 +340,41 @@ function Home({
 
 function Layout() {
   const [user,           setUser]       = useState<User | null>(null);
-  const [userStatus,     setUserStatus] = useState<UserStatus>('loading');
+  const [authLoading,    setAuthLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate  = useNavigate();
   const location  = useLocation();
 
-  const isDashboard = ['/modules', '/profile', '/settings', '/pending', '/admin']
+  const { profile, loading: profileLoading } = useUserProfile(user);
+  const loading = authLoading || (user !== null && profileLoading);
+
+  const isDashboard = ['/modules', '/profile', '/settings', '/pending', '/admin-console']
     .some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
-    let statusUnsub: (() => void) | null = null;
-
-    const authUnsub = onAuthStateChanged(auth, async (u) => {
-      if (statusUnsub) { statusUnsub(); statusUnsub = null; }
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
-
       if (u) {
-        setUserStatus('loading');
-        await createUserDoc(u);
-        statusUnsub = subscribeUserStatus(u.uid, setUserStatus);
-      } else {
-        setUserStatus(null);
+        await createUserDoc(u).catch(console.error);
       }
+      setAuthLoading(false);
     });
-
-    return () => { authUnsub(); if (statusUnsub) statusUnsub(); };
+    return unsub;
   }, []);
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
   const handleGoogleLogin = async () => {
-    try { await loginWithGoogle(); navigate('/modules'); }
-    catch (err) { console.error(err); }
+    try {
+      await googleSignInAndCreateProfile();
+      navigate('/modules');
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleLogout = async () => {
-    try { await logout(); } catch (err) { console.error(err); }
+    try { await import('./lib/firebase').then(({ logout }) => logout()); } catch (err) { console.error(err); }
     navigate('/');
   };
 
@@ -451,32 +451,39 @@ function Layout() {
 
       {/* ── Routes ────────────────────────────────────────── */}
       <Routes>
-        <Route path="/"        element={<Home user={user} handleGoogleLogin={handleGoogleLogin} />} />
+        <Route path="/" element={<Home user={user} handleGoogleLogin={handleGoogleLogin} />} />
         <Route path="/modules" element={
-          <RequireApproved user={user} userStatus={userStatus}>
-            <CareerDevelopment user={user} />
-          </RequireApproved>
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <CareerDevelopment user={user} profile={profile} />
+          </ApprovedRoute>
         } />
         <Route path="/profile" element={
-          <RequireApproved user={user} userStatus={userStatus}>
-            <Profile user={user} />
-          </RequireApproved>
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <Profile user={user} profile={profile} />
+          </ApprovedRoute>
         } />
         <Route path="/settings" element={
-          <RequireApproved user={user} userStatus={userStatus}>
-            <AccountSettings user={user} />
-          </RequireApproved>
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <AccountSettings user={user} profile={profile} />
+          </ApprovedRoute>
         } />
         <Route path="/pending" element={
-          <PendingApproval user={user} userStatus={userStatus} />
+          <PendingApproval user={user} profile={profile} loading={loading} />
         } />
-        <Route path="/admin" element={
-          <RequireAdmin user={user}>
-            <Admin user={user} />
-          </RequireAdmin>
+        <Route path="/modules/letter-of-intent" element={
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <LetterOfIntent user={user} profile={profile} />
+          </ApprovedRoute>
         } />
+        <Route path="/admin-console" element={
+          <AdminRoute user={user} profile={profile} loading={loading}>
+            <AdminConsole user={user} profile={profile} profileLoading={loading} />
+          </AdminRoute>
+        } />
+        <Route path="/setup" element={<SetupSuperAdmin user={user} authLoading={authLoading} />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms"   element={<Terms />} />
+        <Route path="/admin"   element={<Navigate to="/admin-console" replace />} />
       </Routes>
 
       {/* ── Public footer ─────────────────────────────────── */}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { updateDisplayName } from '../lib/firebase';
+import { updateDisplayName, UserProfile } from '../lib/firebase';
 import Sidebar from '../components/Sidebar';
 
 interface ProfileData {
@@ -52,9 +52,10 @@ function Toast({ message, type }: { message: string; type: 'success' | 'error' }
 
 interface ProfileProps {
   user: User | null;
+  profile?: UserProfile | null;
 }
 
-export default function Profile({ user }: ProfileProps) {
+export default function Profile({ user, profile: userProfile }: ProfileProps) {
   const [displayName, setDisplayName] = useState('');
   const [data, setData] = useState<ProfileData>({
     bio: '', location: '', careerGoal: '', industry: '', linkedIn: '', phone: '',
@@ -103,14 +104,14 @@ export default function Profile({ user }: ProfileProps) {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f7f8] dark:bg-[#101922]">
       {/* ── Sidebar ───────────────────────────────────── */}
-      <Sidebar user={user} />
+      <Sidebar user={user} profile={userProfile} />
 
       {/* ── Mobile sidebar overlay ──────────────────────── */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileSidebarOpen(false)}>
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute left-0 top-0 h-full w-64 bg-[#183B68]" onClick={(e) => e.stopPropagation()}>
-            <Sidebar user={user} />
+            <Sidebar user={user} profile={userProfile} />
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { changePassword, deleteAccount, isEmailUser } from '../lib/firebase';
+import { changePassword, deleteAccount, isEmailUser, UserProfile } from '../lib/firebase';
 import Sidebar from '../components/Sidebar';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -80,9 +80,10 @@ function Toast({ message, type }: { message: string; type: 'success' | 'error' }
 
 interface AccountSettingsProps {
   user: User | null;
+  profile?: UserProfile | null;
 }
 
-export default function AccountSettings({ user }: AccountSettingsProps) {
+export default function AccountSettings({ user, profile }: AccountSettingsProps) {
   // Mobile sidebar
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -178,14 +179,14 @@ export default function AccountSettings({ user }: AccountSettingsProps) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f6f7f8] dark:bg-[#101922]">
-      <Sidebar user={user} />
+      <Sidebar user={user} profile={profile} />
 
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileSidebarOpen(false)}>
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute left-0 top-0 h-full w-64 bg-[#183B68]" onClick={(e) => e.stopPropagation()}>
-            <Sidebar user={user} />
+            <Sidebar user={user} profile={profile} />
           </div>
         </div>
       )}

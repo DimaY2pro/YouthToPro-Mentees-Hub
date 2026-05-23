@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { logout } from '../lib/firebase';
+import { UserProfile } from '../lib/firebase';
+import Sidebar from '../components/Sidebar';
 
 type StatusType = 'Not Started' | 'In Progress' | 'Completed';
 
@@ -42,9 +43,10 @@ function StatusBadge({ status, onChange }: { status: StatusType, onChange?: (sta
 
 interface CareerDevelopmentProps {
   user: User | null;
+  profile?: UserProfile | null;
 }
 
-export default function CareerDevelopment({ user }: CareerDevelopmentProps) {
+export default function CareerDevelopment({ user, profile }: CareerDevelopmentProps) {
   const [moduleStatuses, setModuleStatuses] = useState<Record<string, StatusType>>({
     intent: 'Not Started',
     cv: 'Not Started',
@@ -55,17 +57,12 @@ export default function CareerDevelopment({ user }: CareerDevelopmentProps) {
     interview: 'Not Started'
   });
 
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const updateStatus = (key: string, status: StatusType) => {
     setModuleStatuses(prev => ({ ...prev, [key]: status }));
@@ -78,53 +75,24 @@ export default function CareerDevelopment({ user }: CareerDevelopmentProps) {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      <aside className="hidden md:flex w-64 bg-[#183B68] dark:bg-[#15202b] border-r border-[#183B68]/10 dark:border-slate-800 flex-col justify-between h-full p-4 shrink-0 transition-colors duration-200 text-white">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-white/10 dark:border-slate-800">
-            <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 shadow-sm ring-2 ring-white/20 dark:ring-slate-700" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAe-ZN7-JOKWieog_pNiPwtzrKnUeuXQ4fc-oY08SkAc65AV-KaF2rby-y3GSAcXpYUv7L8q9jFLPGyFdykIU8jy9k8_hp9iRwU30k0hzkJU0lB-haPQN6DGprvs5FFnifo5pbj-Ur0vhK-71lTMlaOLAF4WdttwJKKvzCloRdfxh6EdVlPtvW7-JGnMXMJsYji2X8cszZE-UbkhwxOj6DJ_ys-CYpmmBbMWqqFqPusg7lFdTfKekDLiM8yEJzbhfNHyGllqPmQ3L8")'}}></div>
-            <div className="flex flex-col">
-              <h1 className="text-white dark:text-white text-sm font-bold leading-normal">{user.displayName || user.email?.split('@')[0] || 'Mentee'}</h1>
-              <p className="text-white/60 dark:text-slate-400 text-xs font-normal leading-normal">Mentee Program YouthToPro</p>
-            </div>
-          </div>
-          <nav className="flex flex-col gap-2">
-            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-800 transition-colors group" to="/">
-              <span className="material-symbols-outlined text-white/60 group-hover:text-[#F3B557] dark:text-slate-400 dark:group-hover:text-[#F3B557] transition-colors">home</span>
-              <span className="text-sm font-medium">Home</span>
-            </Link>
-            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F3B557] dark:bg-primary/20 text-[#183B68] transition-colors" to="/modules">
-              <span className="material-symbols-outlined fill-1">work</span>
-              <span className="text-sm font-bold">Career Modules</span>
-            </Link>
-            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-800 transition-colors group" to="/modules">
-              <span className="material-symbols-outlined text-white/60 group-hover:text-[#F3B557] dark:text-slate-400 dark:group-hover:text-[#F3B557] transition-colors">person</span>
-              <span className="text-sm font-medium">Profile</span>
-            </Link>
-            <Link className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-800 transition-colors group" to="/modules">
-              <span className="material-symbols-outlined text-white/60 group-hover:text-[#F3B557] dark:text-slate-400 dark:group-hover:text-[#F3B557] transition-colors">settings</span>
-              <span className="text-sm font-medium">Account Setting</span>
-            </Link>
-            <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 dark:text-slate-300 hover:bg-white/10 dark:hover:bg-slate-800 transition-colors group text-left w-full mt-4">
-              <span className="material-symbols-outlined text-white/60 group-hover:text-red-400 dark:text-slate-400 dark:group-hover:text-red-400 transition-colors">logout</span>
-              <span className="text-sm font-medium group-hover:text-red-400">Log out</span>
-            </button>
-          </nav>
-        </div>
-        <button disabled className="flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-[#7EC5B3]/50 cursor-not-allowed text-white/50 text-sm font-bold leading-normal transition-colors shadow-sm">
-          <span className="material-symbols-outlined text-[20px]">add_circle</span>
-          <span className="truncate">New Goal</span>
-        </button>
-      </aside>
+      <Sidebar user={user} profile={profile} />
 
-      {/* Mobile nav header for when sidebar is hidden */}
-      <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-[#183B68] flex items-center justify-between px-4 z-50">
-        <h1 className="text-white font-bold">YouthToPro</h1>
-        <button onClick={handleLogout} className="text-white/80 hover:text-white">
-          <span className="material-symbols-outlined">logout</span>
+      {/* Mobile header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#183B68] flex items-center justify-between px-4 z-50">
+        <h1 className="text-white font-bold text-sm">YouthToPro Hub</h1>
+        <button onClick={() => setMobileSidebarOpen(true)} className="text-white/80 hover:text-white">
+          <span className="material-symbols-outlined">menu</span>
         </button>
       </div>
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileSidebarOpen(false)}>
+          <div className="absolute inset-y-0 left-0 w-64 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <Sidebar user={user} profile={profile} />
+          </div>
+        </div>
+      )}
 
-      <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark relative pt-16 md:pt-0">
+      <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark relative pt-14 md:pt-0">
         <div className="max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col gap-8">
           <header className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -184,8 +152,11 @@ export default function CareerDevelopment({ user }: CareerDevelopmentProps) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
-            <div className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDDQg4h-WGy59XrwMI7ow7u0ivHiKJlPyfgKD592EUxObk-MdFuQx2tzVFjO5enxAA9srS4kZ6B0XVihPrLmLLzy8L9Py5DMgJRf6bD6opaEWagh5vGIFF71pGJF43n-S5r3A_8-anW0cWQTRFJ-bLTfowDHNhcoPPWNbuHLciP83mP9D1UGlPVIcAn600tQWiC_6W0G3QZVhuPtbOn3J6tLte0mH6fErdPq-GOcwbg26_uXRp6B8X8vore7X3ks4wkepOIhc4KjqM")' }}></div>
+            <div
+              onClick={() => navigate('/modules/letter-of-intent')}
+              className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/loi-bg.jpg")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.intent} onChange={(status) => updateStatus('intent', status)} />
@@ -195,7 +166,7 @@ export default function CareerDevelopment({ user }: CareerDevelopmentProps) {
                   <span className="material-symbols-outlined text-[#183B68] bg-[#7EC5B3] p-2 rounded-full backdrop-blur-sm">description</span>
                 </div>
                 <h4 className="text-white text-lg font-bold leading-tight">Letter of Intent Builder</h4>
-                <p className="text-slate-200 text-xs line-clamp-2">Craft a compelling narrative for your applications.</p>
+                <p className="text-slate-200 text-xs line-clamp-2">Write your personal letter to your mentor.</p>
               </div>
             </div>
 

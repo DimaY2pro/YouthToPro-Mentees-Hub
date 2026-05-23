@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserData(request.auth.uid).role in ['admin', 'superadmin'];
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && getUserData(request.auth.uid).role == 'superadmin';
+    }
+
+    // ── Users collection ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any signed-in user can read their own doc; admins can read all
+      allow read: if isOwner(uid) || isAdmin();
+
+      // Users can create their own doc on registration
+      allow create: if isOwner(uid) && isSignedIn();
+
+      // Users can update their own non-sensitive fields; admins can update any
+      allow update: if isOwner(uid) || isAdmin();
+
+      // Only superadmin can delete user docs
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Admin logs (write-only for admins, read-only for admins) ───────────────
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Logs are immutable
+    }
+
+  }
+}

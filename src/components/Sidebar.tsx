@@ -1,29 +1,37 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { logout, ADMIN_EMAIL } from '../lib/firebase';
+import { logout, UserProfile } from '../lib/firebase';
 
 interface SidebarProps {
   user: User;
+  profile?: UserProfile | null;
 }
 
 const baseNavItems = [
-  { to: '/',        icon: 'home',     label: 'Home' },
-  { to: '/modules', icon: 'work',     label: 'Career Modules' },
-  { to: '/profile', icon: 'person',   label: 'My Profile' },
-  { to: '/settings',icon: 'settings', label: 'Account Settings' },
+  { to: '/',        icon: 'home',     label: 'Home'            },
+  { to: '/modules', icon: 'work',     label: 'Career Modules'  },
+  { to: '/profile', icon: 'person',   label: 'My Profile'      },
+  { to: '/settings',icon: 'settings', label: 'Account Settings'},
 ];
 
-export default function Sidebar({ user }: SidebarProps) {
+const adminNavItem = { to: '/admin-console', icon: 'admin_panel_settings', label: 'Admin Console' };
+
+export default function Sidebar({ user, profile }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navItems = user.email === ADMIN_EMAIL
-    ? [...baseNavItems, { to: '/admin', icon: 'admin_panel_settings', label: 'Admin Panel' }]
-    : baseNavItems;
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   const initials = user.displayName
     ? user.displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : (user.email?.[0] ?? 'M').toUpperCase();
+
+  const roleLabel = profile?.role === 'superadmin'
+    ? 'Super Admin · YouthToPro'
+    : profile?.role === 'admin'
+    ? 'Admin · YouthToPro'
+    : 'Mentee · YouthToPro';
 
   const handleLogout = async () => {
     try { await logout(); } catch (e) { console.error(e); }
@@ -50,9 +58,7 @@ export default function Sidebar({ user }: SidebarProps) {
             <span className="text-white text-sm font-bold truncate">
               {user.displayName ?? user.email?.split('@')[0] ?? 'Mentee'}
             </span>
-            <span className="text-white/60 text-xs">
-              {user.email === ADMIN_EMAIL ? 'Admin · YouthToPro' : 'Mentee · YouthToPro'}
-            </span>
+            <span className="text-white/60 text-xs">{roleLabel}</span>
           </div>
         </div>
 

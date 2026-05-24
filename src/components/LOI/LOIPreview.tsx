@@ -81,8 +81,7 @@ export default function LOIPreview({ data, polishedVersion, onSetPolished, onEdi
         ...data,
         polishedText: polishedVersion,
       });
-      const nameParts = data.fullName.trim().split(/\s+/);
-      downloadDocx(blob, nameParts[0] || 'Mentee', nameParts.slice(1).join('_'));
+      downloadDocx(blob, data.fullName.trim());
     } catch (e: any) {
       setDlError('Download failed. Please try again.');
     } finally {

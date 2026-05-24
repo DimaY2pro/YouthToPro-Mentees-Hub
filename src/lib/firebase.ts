@@ -414,6 +414,54 @@ export interface LOIDraft {
   lastSaved: any;
 }
 
+// ── Firestore: Career Path draft ─────────────────────────────────────────────
+
+export interface CPStageData {
+  roleTitle: string;
+  roleDescription: string;
+  milestones: string[];
+  skills: string[];
+  certifications: string[];
+  communities: string[];
+  targetCompanies: string[];
+}
+
+export interface CareerPathDraft {
+  fullName: string;
+  mentorName: string;
+  universityGradYear: string;
+  degreeMajor: string;
+  careerTitle: string;
+  careerVision: string;
+  stages: {
+    entry: CPStageData;
+    emerging: CPStageData;
+    experienced: CPStageData;
+    leadership: CPStageData;
+  };
+  networkMentors: string[];
+  personalNotes: string;
+  mentorComments: string;
+  mentorFeedbackDate: string;
+  reflections: { reflection1: string; reflection2: string; reflection3: string };
+  lastSaved: any;
+  aiGenerated: boolean;
+}
+
+export const saveCareerPathDraft = async (uid: string, draft: Omit<CareerPathDraft, 'lastSaved'>) => {
+  await setDoc(
+    doc(db, 'users', uid, 'career_path_drafts', 'current'),
+    { ...draft, lastSaved: serverTimestamp() },
+    { merge: true },
+  );
+};
+
+export const loadCareerPathDraft = async (uid: string): Promise<CareerPathDraft | null> => {
+  const snap = await getDoc(doc(db, 'users', uid, 'career_path_drafts', 'current'));
+  if (!snap.exists()) return null;
+  return snap.data() as CareerPathDraft;
+};
+
 export const saveLOIDraft = async (uid: string, draft: Omit<LOIDraft, 'lastSaved'>) => {
   await setDoc(
     doc(db, 'users', uid, 'loi_drafts', 'current'),

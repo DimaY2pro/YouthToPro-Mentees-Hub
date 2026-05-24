@@ -156,7 +156,7 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               onClick={() => navigate('/modules/letter-of-intent')}
               className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/loi-bg.jpg")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/LOIImage.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.intent} onChange={(status) => updateStatus('intent', status)} />
@@ -170,8 +170,11 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               </div>
             </div>
 
-            <div className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAM2soMdA0MgqOrk2K7tFDa0WN2GLJRCavW8CUgK0UdMVTqkZThNxI28feL9NTrmf5p57aR5k-aINzZyHArURCDeB92erVDAri3-N6oKyVBPeJEFl1C9dnFla0osccZTvWwfzCw324ITAX61FmHWA_aRhxuSxvCoofwOlUT3l9VSg-hzAaR1_1-_O-X-JJS3MpDLqZZXaK5y98tWu77_1zzUBenbYxL4UVacaj6wASu0HB5qd8UNM4UgR9BwogA3gHqBv9lGO09mlg")' }}></div>
+            <div
+              onClick={() => window.open('http://localhost:3002', '_blank', 'noopener,noreferrer')}
+              className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/CVImage.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.cv} onChange={(status) => updateStatus('cv', status)} />
@@ -186,10 +189,10 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
             </div>
 
             <div 
-              onClick={() => window.open("https://swot-ai-git-codex-fix-api-fetch-b0898c-dima-kandalafts-projects.vercel.app", "_blank", "noopener,noreferrer")}
+              onClick={() => window.open('http://localhost:3003', '_blank', 'noopener,noreferrer')}
               className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDGh4xkDrljLNHsB663vButDGeJawxUGdc-tFaArziGONpzVeI1KRHGR8dHiFfOio5c1sTd4RdycJhzTEzR6QHLUAaYPSkdAETwJ7HuyZZnCQMEzrTs8-RTU3pQYKZKC0b9F3b9lq8uJ0C_-1wCDGOKkoS9TLYCICRw67bQoWLebdTKsCbBKFoflUtFv28p_CFh3FbVpfiI_fuP-dUW0gWzAiUbFISGyhlEO-1HgFJ8ET5IGXpNfDiLYkqFpmCgoEjlDdFk3CwC_L8")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/SWOTImage.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.swot} onChange={(status) => updateStatus('swot', status)} />
@@ -203,7 +206,10 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               </div>
             </div>
 
-            <div className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
+            <div
+              onClick={() => navigate('/modules/career-path')}
+              className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
+            >
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB9BNT9bm0QYx-fdoM2eB89ZfbyzILz7J8P1EaxC5y0GIqQcwovEkowOVhB1TDxpCTXYciXLpCmbpnL2wuyW7ZYB68CESO4-Pu4VwxL8tqFxCEJwUWz1EhtKMB4Xc1JUYk1JuqJpJlNwQLd1vYIK2yahZUFSjUwCBUeGGh4KMABeSg1MHpeXeNurXKUIw-qj8pgr-Ym_IXkp1lzZ0BpuGhiCskYnBRZNuyKStlw-qBu9YPZlnk_V3wQLgtx7BDQXu5fAKlfO2O7c_0")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">

@@ -39,7 +39,7 @@ async function streamClaude(
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1024,
         stream: true,
         system: systemPrompt,
@@ -133,4 +133,110 @@ export async function streamPolishLetter(
 ) {
   const userPrompt = `Please polish this Letter of Intent:\n\n${letterText}`;
   streamClaude(POLISH_SYSTEM_PROMPT, userPrompt, onChunk, onDone, onError);
+}
+
+// ── Career Path AI functions ──────────────────────────────────────────────────
+
+const CP_ROADMAP_SYSTEM = `You are a career development expert for YouthToPro, a mentorship program for university students primarily in the Middle East and emerging markets. You help students build realistic, practical career roadmaps. Use simple language. Be specific and actionable. Return ONLY valid JSON — no explanation, no markdown, no preamble.`;
+
+const CP_EXPLORER_SYSTEM = `You are a career guidance counsellor for YouthToPro, a mentorship program for university students in the Middle East and emerging markets. Give practical, realistic career suggestions suited to their region and background. Use simple, encouraging language. Return ONLY valid JSON.`;
+
+const CP_VISION_SYSTEM = `You are a career counsellor helping a student write a Career Vision Statement. Use simple, personal language. Make it specific to their career and region. Return ONLY the vision statement, 1-2 sentences, no preamble.`;
+
+export async function generateCareerRoadmap(
+  careerTitle: string,
+  degree: string,
+  university: string,
+  region: string = 'Middle East/GCC',
+): Promise<any> {
+  const userPrompt = `Build a complete 4-stage career roadmap for:
+- Career Title: ${careerTitle}
+- Degree & Major: ${degree}
+- University: ${university}
+- Region: ${region}
+
+Return ONLY this JSON (no extra text):
+{
+  "stages": [
+    {
+      "stage": "entry",
+      "roleTitle": "Job title",
+      "roleDescription": "2-3 sentence description of day-to-day work",
+      "milestones": ["milestone 1", "milestone 2", "milestone 3", "milestone 4"],
+      "skills": ["skill 1", "skill 2", "skill 3", "skill 4", "skill 5"],
+      "certifications": ["cert 1", "cert 2", "cert 3"],
+      "communities": ["community 1", "community 2"],
+      "targetCompanies": ["company 1", "company 2", "company 3"]
+    },
+    { "stage": "emerging", "roleTitle": "...", "roleDescription": "...", "milestones": [], "skills": [], "certifications": [], "communities": [], "targetCompanies": [] },
+    { "stage": "experienced", "roleTitle": "...", "roleDescription": "...", "milestones": [], "skills": [], "certifications": [], "communities": [], "targetCompanies": [] },
+    { "stage": "leadership", "roleTitle": "...", "roleDescription": "...", "milestones": [], "skills": [], "certifications": [], "communities": [], "targetCompanies": [] }
+  ],
+  "networkSuggestions": ["suggestion 1", "suggestion 2", "suggestion 3"]
+}`;
+  const raw = await callClaude(CP_ROADMAP_SYSTEM, userPrompt);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse AI response');
+  return JSON.parse(match[0]);
+}
+
+export async function exploreCareerOptions(
+  degree: string,
+  interests: string,
+  skills: string,
+  workStyle: string,
+  region: string,
+): Promise<any[]> {
+  const userPrompt = `Student profile:
+- Degree/Major: ${degree}
+- Interests: ${interests}
+- Skills they enjoy: ${skills}
+- Work style: ${workStyle}
+- Region: ${region}
+
+Suggest 3–5 career paths. Return ONLY a JSON array:
+[
+  {
+    "title": "Career Title",
+    "matchLevel": "strong",
+    "whySuitable": "2-3 sentences",
+    "entryRole": "First job title",
+    "industries": ["Industry 1"],
+    "avgSalaryRange": "AED 8,000–15,000/month",
+    "icon": "material_symbol_name"
+  }
+]
+matchLevel must be one of: "strong", "good", "exploring"`;
+  const raw = await callClaude(CP_EXPLORER_SYSTEM, userPrompt);
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('Could not parse AI response');
+  return JSON.parse(match[0]);
+}
+
+export async function generateVisionStatement(
+  careerTitle: string,
+  region: string,
+  existingText: string,
+): Promise<string> {
+  const userPrompt = `Career Title: ${careerTitle}\nRegion: ${region || 'Middle East/GCC'}\nDraft vision: ${existingText || 'none'}\n\nWrite an inspiring, specific 1-2 sentence career vision statement.`;
+  return callClaude(CP_VISION_SYSTEM, userPrompt);
+}
+
+export async function improveStageField(
+  fieldValue: string,
+  fieldLabel: string,
+  stageLabel: string,
+  careerTitle: string,
+): Promise<string> {
+  const sys = `You are helping a student improve their career roadmap for the ${stageLabel} stage of a career in ${careerTitle}. Use simple, practical language. Be specific. Keep bullet points short. Return ONLY the improved text. No explanation.`;
+  return callClaude(sys, `Improve this "${fieldLabel}" content:\n\n${fieldValue}`);
+}
+
+export async function reviewCareerRoadmap(roadmapText: string, careerTitle: string): Promise<any[]> {
+  const sys = `You are a career counsellor reviewing a student's career roadmap. Give practical, kind, specific feedback. Keep it simple. Return ONLY valid JSON array.`;
+  const userPrompt = `Review this career roadmap for a student pursuing ${careerTitle}:\n\n${roadmapText}\n\nReturn up to 5 suggestions:\n[\n  { "section": "Section name", "icon": "material_symbol_name", "suggestion": "1-2 sentence suggestion" }\n]`;
+  const raw = await callClaude(sys, userPrompt);
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('Could not parse AI response');
+  return JSON.parse(match[0]);
 }

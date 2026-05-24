@@ -195,11 +195,11 @@ export async function generateLOIDocx(data: LOIExportData): Promise<Blob> {
   return blob;
 }
 
-export function downloadDocx(blob: Blob, firstName: string, lastName: string) {
+export function downloadDocx(blob: Blob, fullName: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `YouthToPro_Letter_of_Intent_${firstName}${lastName ? '_' + lastName : ''}.docx`;
+  a.download = `DLV-01 Mentee Letter of Intent - ${fullName || 'Mentee'}.docx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

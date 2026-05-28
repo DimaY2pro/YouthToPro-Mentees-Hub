@@ -43,17 +43,9 @@ export default function Sidebar({ user, profile }: SidebarProps) {
       {/* ── User info ───────────────────────────────────── */}
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3 pb-4 border-b border-white/10">
-          {user.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt={user.displayName ?? 'avatar'}
-              className="size-12 rounded-full ring-2 ring-white/20 object-cover shrink-0"
-            />
-          ) : (
-            <div className="size-12 rounded-full ring-2 ring-white/20 bg-[#F3B557] flex items-center justify-center text-[#183B68] font-bold text-lg shrink-0">
-              {initials}
-            </div>
-          )}
+          <div className="size-12 rounded-full ring-2 ring-white/20 bg-[#F3B557] flex items-center justify-center text-[#183B68] font-bold text-lg shrink-0">
+            {initials}
+          </div>
           <div className="flex flex-col min-w-0">
             <span className="text-white text-sm font-bold truncate">
               {user.displayName ?? user.email?.split('@')[0] ?? 'Mentee'}

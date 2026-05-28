@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { saveLOIDraft, loadLOIDraft, UserProfile } from '../lib/firebase';
+import { saveLOIDraft, loadLOIDraft, loadMenteeProfile, UserProfile } from '../lib/firebase';
 import Sidebar from '../components/Sidebar';
 import WhatIsLOI from '../components/LOI/WhatIsLOI';
 import LOISamples from '../components/LOI/LOISamples';
@@ -60,37 +60,69 @@ export default function LetterOfIntent({ user, profile }: Props) {
   if (!user) return <Navigate to="/" replace />;
 
   useEffect(() => {
-    loadLOIDraft(user.uid).then((draft) => {
-      if (!draft) { setDraftLoaded(true); return; }
-      const saved = draft.lastSaved?.toDate?.();
-      const dateStr = saved
-        ? saved.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-        : 'a previous session';
-      setFormData({
-        date: draft.date || formData.date,
-        fullName: draft.fullName || '',
-        program: draft.program || '',
-        university: draft.university || '',
-        cityCountry: draft.cityCountry || '',
-        graduationMonth: draft.graduationMonth || '',
-        graduationYear: draft.graduationYear || '',
-        enjoyed: draft.enjoyed || '',
-        challenging: draft.challenging || '',
-        industry: draft.industry || '',
-        preferredLocations: draft.preferredLocations || '',
-        careerGoals: draft.careerGoals || '',
-        skills: draft.skills || '',
-        challenges: draft.challenges?.length ? draft.challenges : [''],
-        expectations: draft.expectations?.length ? draft.expectations : [''],
-        availability: draft.availability || '',
-        mobile: draft.mobile || '',
-        whatsapp: draft.whatsapp || '',
-        email: draft.email || user.email || '',
-      });
-      if (draft.aiPolishedVersion) setPolishedVersion(draft.aiPolishedVersion);
-      setDraftBanner(`We found your saved draft from ${dateStr}. Your progress has been restored.`);
+    Promise.all([
+      loadLOIDraft(user.uid).catch(() => null),
+      loadMenteeProfile(user.uid).catch(() => null),
+    ]).then(([draft, menteeProfile]) => {
+      const profileProgram = menteeProfile
+        ? (menteeProfile.minor
+            ? `${menteeProfile.major}, Minor: ${menteeProfile.minor}`
+            : menteeProfile.major || '')
+        : '';
+
+      if (draft) {
+        const saved = draft.lastSaved?.toDate?.();
+        const dateStr = saved
+          ? saved.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+          : 'a previous session';
+        setFormData({
+          date: draft.date || formData.date,
+          fullName: draft.fullName || menteeProfile?.fullName || user.displayName || '',
+          program: draft.program || profileProgram,
+          university: draft.university || menteeProfile?.university || '',
+          cityCountry: draft.cityCountry || menteeProfile?.location || '',
+          graduationMonth: draft.graduationMonth || '',
+          graduationYear: draft.graduationYear || '',
+          enjoyed: draft.enjoyed || '',
+          challenging: draft.challenging || '',
+          industry: draft.industry || menteeProfile?.industry || '',
+          preferredLocations: draft.preferredLocations || '',
+          careerGoals: draft.careerGoals || menteeProfile?.careerGoal || '',
+          skills: draft.skills || '',
+          challenges: draft.challenges?.length ? draft.challenges : [''],
+          expectations: draft.expectations?.length ? draft.expectations : [''],
+          availability: draft.availability || '',
+          mobile: draft.mobile || menteeProfile?.phone || '',
+          whatsapp: draft.whatsapp || '',
+          email: draft.email || user.email || '',
+        });
+        if (draft.aiPolishedVersion) setPolishedVersion(draft.aiPolishedVersion);
+        setDraftBanner(`We found your saved draft from ${dateStr}. Your progress has been restored.`);
+        setActiveTab('write');
+      } else if (menteeProfile) {
+        setFormData({
+          date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+          fullName: menteeProfile.fullName || user.displayName || '',
+          university: menteeProfile.university || '',
+          program: profileProgram,
+          cityCountry: menteeProfile.location || '',
+          graduationMonth: '',
+          graduationYear: '',
+          enjoyed: '',
+          challenging: '',
+          industry: menteeProfile.industry || '',
+          preferredLocations: '',
+          careerGoals: menteeProfile.careerGoal || '',
+          skills: '',
+          challenges: [''],
+          expectations: [''],
+          availability: '',
+          mobile: menteeProfile.phone || '',
+          whatsapp: '',
+          email: user.email ?? '',
+        });
+      }
       setDraftLoaded(true);
-      setActiveTab('write');
     }).catch(() => setDraftLoaded(true));
   }, [user.uid]);
 

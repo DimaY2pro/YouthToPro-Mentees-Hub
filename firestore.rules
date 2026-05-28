@@ -36,6 +36,11 @@ service cloud.firestore {
 
       // Only superadmin can delete user docs
       allow delete: if isSuperAdmin();
+
+      // ── User subcollections (drafts, profile data) ──────────────────────────
+      match /{subcollection}/{document} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // ── Admin logs (write-only for admins, read-only for admins) ───────────────

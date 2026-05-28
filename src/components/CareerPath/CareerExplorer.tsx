@@ -13,6 +13,8 @@ interface CareerSuggestion {
 
 interface Props {
   onSelectCareer: (title: string) => void;
+  initialDegree?: string;
+  initialRegion?: string;
 }
 
 const MATCH_CONFIG = {
@@ -21,12 +23,12 @@ const MATCH_CONFIG = {
   exploring: { label: 'Worth Exploring', icon: 'explore',     bg: 'bg-amber-100',  text: 'text-amber-700'  },
 };
 
-export default function CareerExplorer({ onSelectCareer }: Props) {
-  const [degree,    setDegree]    = useState('');
+export default function CareerExplorer({ onSelectCareer, initialDegree = '', initialRegion = '' }: Props) {
+  const [degree,    setDegree]    = useState(initialDegree);
   const [interests, setInterests] = useState('');
   const [skills,    setSkills]    = useState('');
   const [workStyle, setWorkStyle] = useState('No Preference');
-  const [region,    setRegion]    = useState('');
+  const [region,    setRegion]    = useState(initialRegion);
 
   const [suggestions, setSuggestions] = useState<CareerSuggestion[]>([]);
   const [loading,     setLoading]     = useState(false);

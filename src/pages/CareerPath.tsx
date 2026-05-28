@@ -1,22 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { UserProfile, CareerPathDraft, saveCareerPathDraft, loadCareerPathDraft } from '../lib/firebase';
+import { UserProfile, CareerPathDraft, saveCareerPathDraft, loadCareerPathDraft, loadMenteeProfile } from '../lib/firebase';
 import Sidebar from '../components/Sidebar';
-import HowItWorks from '../components/CareerPath/HowItWorks';
-import CareerExplorer from '../components/CareerPath/CareerExplorer';
 import CareerPathForm from '../components/CareerPath/CareerPathForm';
 import CareerPathPreview from '../components/CareerPath/CareerPathPreview';
-import MentorComments from '../components/CareerPath/MentorComments';
-
-type Tab = 'how' | 'explorer' | 'build' | 'preview' | 'mentor';
+type Tab = 'build' | 'preview';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'how',      label: 'How It Works',      icon: 'explore' },
-  { id: 'explorer', label: 'Career Explorer',   icon: 'lightbulb' },
-  { id: 'build',    label: 'Build My Roadmap',  icon: 'map' },
-  { id: 'preview',  label: 'Preview & Download',icon: 'picture_as_pdf' },
-  { id: 'mentor',   label: 'Mentor Comments',   icon: 'chat' },
+  { id: 'build',   label: 'Build My Roadmap',   icon: 'map'           },
+  { id: 'preview', label: 'Preview & Download',  icon: 'picture_as_pdf'},
 ];
 
 const emptyDraft = (displayName: string): CareerPathDraft => ({
@@ -47,7 +40,8 @@ interface Props {
 }
 
 export default function CareerPath({ user, profile }: Props) {
-  const [tab,        setTab]        = useState<Tab>('how');
+  const [tab,        setTab]        = useState<Tab>('build');
+  const [searchParams] = useSearchParams();
   const [draft,      setDraft]      = useState<CareerPathDraft | null>(null);
   const [saving,     setSaving]     = useState(false);
   const [lastSaved,  setLastSaved]  = useState('');
@@ -61,17 +55,44 @@ export default function CareerPath({ user, profile }: Props) {
   // Load draft on mount
   useEffect(() => {
     if (!user) return;
-    loadCareerPathDraft(user.uid).then((saved) => {
+    Promise.all([
+      loadCareerPathDraft(user.uid).catch(() => null),
+      loadMenteeProfile(user.uid).catch(() => null),
+    ]).then(([saved, menteeProfile]) => {
+      const degreeMajor = menteeProfile
+        ? (menteeProfile.minor
+            ? `${menteeProfile.major}, Minor: ${menteeProfile.minor}`
+            : menteeProfile.major || '')
+        : '';
+
       if (saved) {
-        setDraft(saved);
+        // Merge profile into any empty draft fields
+        const merged: CareerPathDraft = {
+          ...saved,
+          fullName: saved.fullName || menteeProfile?.fullName || user.displayName || '',
+          universityGradYear: saved.universityGradYear || menteeProfile?.university || '',
+          degreeMajor: saved.degreeMajor || degreeMajor,
+          careerTitle: saved.careerTitle || menteeProfile?.careerGoal || '',
+        };
+        // URL param always overrides (coming from Career Explorer)
+        const careerParam = searchParams.get('career');
+        if (careerParam) merged.careerTitle = careerParam;
+        setDraft(merged);
         setRestored(true);
         setLastSaved('Restored from last session');
         setTimeout(() => setRestored(false), 5000);
       } else {
-        setDraft(emptyDraft(user.displayName ?? ''));
+        const base = emptyDraft(user.displayName ?? '');
+        if (menteeProfile) {
+          base.fullName = menteeProfile.fullName || user.displayName || '';
+          base.universityGradYear = menteeProfile.university || '';
+          base.degreeMajor = degreeMajor;
+          base.careerTitle = menteeProfile.careerGoal || '';
+        }
+        const careerParam = searchParams.get('career');
+        if (careerParam) base.careerTitle = careerParam;
+        setDraft(base);
       }
-    }).catch(() => {
-      setDraft(emptyDraft(user.displayName ?? ''));
     });
   }, [user.uid]);
 
@@ -169,22 +190,6 @@ export default function CareerPath({ user, profile }: Props) {
 
           {/* Tab content */}
           <div className="pb-10">
-            {tab === 'how' && (
-              <HowItWorks
-                onStartBuilding={() => switchTab('build')}
-                onExplorer={() => switchTab('explorer')}
-              />
-            )}
-
-            {tab === 'explorer' && (
-              <CareerExplorer
-                onSelectCareer={(title) => {
-                  setDraft((d) => d ? { ...d, careerTitle: title } : d);
-                  switchTab('build');
-                }}
-              />
-            )}
-
             {tab === 'build' && (
               <CareerPathForm
                 user={user}
@@ -203,14 +208,7 @@ export default function CareerPath({ user, profile }: Props) {
               />
             )}
 
-            {tab === 'mentor' && (
-              <MentorComments
-                draft={draft}
-                onChange={setDraft}
-                onSave={() => save(draft)}
-                saving={saving}
-              />
-            )}
+
           </div>
         </div>
       </main>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
-import { updateDisplayName, UserProfile } from '../lib/firebase';
+import { updateDisplayName, UserProfile, saveMenteeProfile, loadMenteeProfile } from '../lib/firebase';
 import Sidebar from '../components/Sidebar';
 
 interface ProfileData {
@@ -11,6 +11,10 @@ interface ProfileData {
   industry: string;
   linkedIn: string;
   phone: string;
+  university: string;
+  major: string;
+  minor: string;
+  gpa: string;
 }
 
 const INDUSTRIES = [
@@ -18,9 +22,7 @@ const INDUSTRIES = [
   'Design', 'Engineering', 'Law', 'Non-profit', 'Other',
 ];
 
-function storageKey(uid: string) {
-  return `y2p_profile_${uid}`;
-}
+function storageKey(uid: string) { return `y2p_profile_${uid}`; }
 
 function getInitials(user: User) {
   if (user.displayName) {
@@ -59,6 +61,7 @@ export default function Profile({ user, profile: userProfile }: ProfileProps) {
   const [displayName, setDisplayName] = useState('');
   const [data, setData] = useState<ProfileData>({
     bio: '', location: '', careerGoal: '', industry: '', linkedIn: '', phone: '',
+    university: '', major: '', minor: '', gpa: '',
   });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -70,10 +73,36 @@ export default function Profile({ user, profile: userProfile }: ProfileProps) {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.displayName ?? '');
-    const stored = localStorage.getItem(storageKey(user.uid));
-    if (stored) {
-      try { setData(JSON.parse(stored)); } catch { /* ignore */ }
-    }
+    loadMenteeProfile(user.uid).then((saved) => {
+      if (saved) {
+        setData({
+          bio: saved.bio ?? '',
+          location: saved.location ?? '',
+          careerGoal: saved.careerGoal ?? '',
+          industry: saved.industry ?? '',
+          linkedIn: saved.linkedIn ?? '',
+          phone: saved.phone ?? '',
+          university: saved.university ?? '',
+          major: saved.major ?? '',
+          minor: saved.minor ?? '',
+          gpa: saved.gpa ?? '',
+        });
+      } else {
+        // migrate from localStorage if it exists
+        const stored = localStorage.getItem(storageKey(user.uid));
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setData({ bio: '', location: '', careerGoal: '', industry: '', linkedIn: '', phone: '', university: '', major: '', minor: '', ...parsed });
+          } catch { /* ignore */ }
+        }
+      }
+    }).catch(() => {
+      const stored = localStorage.getItem(storageKey(user.uid));
+      if (stored) {
+        try { setData(JSON.parse(stored)); } catch { /* ignore */ }
+      }
+    });
   }, [user]);
 
   if (!user) return <Navigate to="/" replace />;
@@ -90,7 +119,7 @@ export default function Profile({ user, profile: userProfile }: ProfileProps) {
       if (displayName.trim() !== (user.displayName ?? '')) {
         await updateDisplayName(displayName.trim());
       }
-      localStorage.setItem(storageKey(user.uid), JSON.stringify(data));
+      await saveMenteeProfile(user.uid, { ...data, fullName: displayName.trim() });
       showToast('Profile saved successfully!', 'success');
     } catch (err: any) {
       showToast(err.message ?? 'Failed to save profile.', 'error');
@@ -141,28 +170,14 @@ export default function Profile({ user, profile: userProfile }: ProfileProps) {
           {/* ── Avatar ──────────────────────────────────── */}
           <div className="bg-white dark:bg-[#15202b] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 mb-6">
             <div className="flex items-center gap-5">
-              {user.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt="avatar"
-                  className="size-20 rounded-full ring-4 ring-[#F3B557]/40 object-cover shrink-0"
-                />
-              ) : (
-                <div className="size-20 rounded-full ring-4 ring-[#F3B557]/40 bg-[#183B68] flex items-center justify-center text-[#F3B557] font-black text-2xl shrink-0">
-                  {initials}
-                </div>
-              )}
+              <div className="size-20 rounded-full ring-4 ring-[#F3B557]/40 bg-[#183B68] flex items-center justify-center text-[#F3B557] font-black text-2xl shrink-0">
+                {initials}
+              </div>
               <div>
                 <p className="font-bold text-[#183B68] dark:text-white text-base">
                   {user.displayName ?? user.email?.split('@')[0] ?? 'Mentee'}
                 </p>
                 <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{user.email}</p>
-                {user.photoURL && (
-                  <p className="text-xs text-[#7EC5B3] mt-1 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[14px]">verified</span>
-                    Photo synced from Google
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -237,6 +252,67 @@ export default function Profile({ user, profile: userProfile }: ProfileProps) {
                   className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 text-slate-900 dark:text-white focus:border-[#7EC5B3] focus:ring-1 focus:ring-[#7EC5B3] outline-none transition-all placeholder:text-slate-400 text-sm resize-none"
                 />
                 <p className="text-xs text-slate-400 text-right">{data.bio.length}/300</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Education info ────────────────────────────── */}
+          <div className="bg-white dark:bg-[#15202b] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 mb-6">
+            <h2 className="text-base font-bold text-[#183B68] dark:text-white mb-5 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-[#7EC5B3]">school</span>
+              Education
+            </h2>
+
+            <div className="flex flex-col gap-5">
+              {/* University */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">University Name</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-3 text-slate-400">
+                    <span className="material-symbols-outlined text-[18px]">account_balance</span>
+                  </span>
+                  <input
+                    value={data.university}
+                    onChange={(e) => setData((d) => ({ ...d, university: e.target.value }))}
+                    placeholder="e.g. University of Dubai"
+                    className="h-11 w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 pl-10 pr-3 text-slate-900 dark:text-white focus:border-[#7EC5B3] focus:ring-1 focus:ring-[#7EC5B3] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Major, Minor, GPA */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Major</label>
+                  <input
+                    value={data.major}
+                    onChange={(e) => setData((d) => ({ ...d, major: e.target.value }))}
+                    placeholder="e.g. Business Administration"
+                    className="h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 text-slate-900 dark:text-white focus:border-[#7EC5B3] focus:ring-1 focus:ring-[#7EC5B3] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Minor <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    value={data.minor}
+                    onChange={(e) => setData((d) => ({ ...d, minor: e.target.value }))}
+                    placeholder="e.g. Digital Marketing"
+                    className="h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 text-slate-900 dark:text-white focus:border-[#7EC5B3] focus:ring-1 focus:ring-[#7EC5B3] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    GPA <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    value={data.gpa}
+                    onChange={(e) => setData((d) => ({ ...d, gpa: e.target.value }))}
+                    placeholder="e.g. 3.8 / 4.0"
+                    className="h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 text-slate-900 dark:text-white focus:border-[#7EC5B3] focus:ring-1 focus:ring-[#7EC5B3] outline-none transition-all placeholder:text-slate-400 text-sm"
+                  />
+                </div>
               </div>
             </div>
           </div>

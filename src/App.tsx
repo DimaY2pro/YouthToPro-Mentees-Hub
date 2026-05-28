@@ -30,8 +30,10 @@ import AccountSettings  from './pages/AccountSettings';
 import PendingApproval  from './pages/PendingApproval';
 import AdminConsole     from './pages/AdminConsole';
 import SetupSuperAdmin  from './pages/SetupSuperAdmin';
-import LetterOfIntent   from './pages/LetterOfIntent';
-import CareerPath       from './pages/CareerPath';
+import LetterOfIntent      from './pages/LetterOfIntent';
+import CareerPath          from './pages/CareerPath';
+import CareerExplorerPage  from './pages/CareerExplorerPage';
+import SWOTAnalysis        from './pages/SWOTAnalysis';
 import { ApprovedRoute, AdminRoute } from './components/ProtectedRoute';
 import { useUserProfile } from './hooks/useUserProfile';
 
@@ -471,6 +473,11 @@ function Layout() {
         <Route path="/pending" element={
           <PendingApproval user={user} profile={profile} loading={loading} />
         } />
+        <Route path="/modules/career-explorer" element={
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <CareerExplorerPage user={user} profile={profile} />
+          </ApprovedRoute>
+        } />
         <Route path="/modules/letter-of-intent" element={
           <ApprovedRoute user={user} profile={profile} loading={loading}>
             <LetterOfIntent user={user} profile={profile} />
@@ -479,6 +486,11 @@ function Layout() {
         <Route path="/modules/career-path" element={
           <ApprovedRoute user={user} profile={profile} loading={loading}>
             <CareerPath user={user} profile={profile} />
+          </ApprovedRoute>
+        } />
+        <Route path="/modules/swot" element={
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <SWOTAnalysis user={user} profile={profile} />
           </ApprovedRoute>
         } />
         <Route path="/admin-console" element={

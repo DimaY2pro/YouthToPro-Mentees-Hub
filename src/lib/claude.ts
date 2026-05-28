@@ -14,7 +14,7 @@ IMPORTANT: Do NOT change the structure, add new sections, invent information, or
 Return ONLY the complete polished letter with no explanation, no preamble, and no extra commentary.`;
 
 function getKey(): string {
-  return process.env.ANTHROPIC_API_KEY || '';
+  return (import.meta as any).env?.VITE_ANTHROPIC_API_KEY || '';
 }
 
 async function streamClaude(
@@ -39,7 +39,7 @@ async function streamClaude(
         'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         stream: true,
         system: systemPrompt,
@@ -230,6 +230,44 @@ export async function improveStageField(
 ): Promise<string> {
   const sys = `You are helping a student improve their career roadmap for the ${stageLabel} stage of a career in ${careerTitle}. Use simple, practical language. Be specific. Keep bullet points short. Return ONLY the improved text. No explanation.`;
   return callClaude(sys, `Improve this "${fieldLabel}" content:\n\n${fieldValue}`);
+}
+
+// ── SWOT AI function ──────────────────────────────────────────────────────────
+
+export interface SwotQuestion { question: string; sampleAnswer: string; }
+export interface SwotStructure {
+  strengths: SwotQuestion[];
+  weaknesses: SwotQuestion[];
+  opportunities: SwotQuestion[];
+  threats: SwotQuestion[];
+}
+
+export async function generateSwotStructure(careerGoal: string): Promise<SwotStructure> {
+  const sys = `You are an expert career development coach specializing in personalized SWOT analysis for university students in the Middle East and GCC region. Generate structured SWOT questions tailored to the user's career goal. Use simple, encouraging language. Return ONLY valid JSON.`;
+  const userPrompt = `Career Goal: "${careerGoal}"
+
+Generate exactly 4 questions per SWOT category, each with a concise 1-2 sentence sample answer tailored to this career goal.
+
+Return ONLY this JSON:
+{
+  "strengths": [
+    { "question": "Question about a strength relevant to the career goal?", "sampleAnswer": "Example answer." },
+    { "question": "...", "sampleAnswer": "..." },
+    { "question": "...", "sampleAnswer": "..." },
+    { "question": "...", "sampleAnswer": "..." }
+  ],
+  "weaknesses": [ { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." } ],
+  "opportunities": [ { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." } ],
+  "threats": [ { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." }, { "question": "...", "sampleAnswer": "..." } ]
+}`;
+  const raw = await callClaude(sys, userPrompt);
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse SWOT structure');
+  const parsed = JSON.parse(match[0]);
+  if (!parsed.strengths || !parsed.weaknesses || !parsed.opportunities || !parsed.threats) {
+    throw new Error('Invalid SWOT structure from AI');
+  }
+  return parsed as SwotStructure;
 }
 
 export async function reviewCareerRoadmap(roadmapText: string, careerTitle: string): Promise<any[]> {

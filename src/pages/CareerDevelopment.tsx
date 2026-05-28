@@ -48,6 +48,7 @@ interface CareerDevelopmentProps {
 
 export default function CareerDevelopment({ user, profile }: CareerDevelopmentProps) {
   const [moduleStatuses, setModuleStatuses] = useState<Record<string, StatusType>>({
+    explorer: 'Not Started',
     intent: 'Not Started',
     cv: 'Not Started',
     swot: 'Not Started',
@@ -142,13 +143,8 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
             </div>
           </section>
 
-          <div className="flex items-center justify-between pt-4">
+          <div className="pt-4">
             <h3 className="text-[#183B68] dark:text-white text-xl font-bold">Your Modules</h3>
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-              <button className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-[#183B68] dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">All</button>
-              <button className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-[#183B68] dark:hover:text-white transition-colors">In Progress</button>
-              <button className="whitespace-nowrap px-3 py-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-[#183B68] dark:hover:text-white transition-colors">Completed</button>
-            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
@@ -188,8 +184,8 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               </div>
             </div>
 
-            <div 
-              onClick={() => window.open('http://localhost:3003', '_blank', 'noopener,noreferrer')}
+            <div
+              onClick={() => navigate('/modules/swot')}
               className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
             >
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/SWOTImage.png")' }}></div>
@@ -203,6 +199,25 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
                 </div>
                 <h4 className="text-white text-lg font-bold leading-tight">SWOT Analysis</h4>
                 <p className="text-slate-200 text-xs line-clamp-2">Identify your strengths, weaknesses, opportunities, and threats.</p>
+              </div>
+            </div>
+
+            {/* Career Explorer — after SWOT */}
+            <div
+              onClick={() => navigate('/modules/career-explorer')}
+              className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/CareerExploration.png")' }}></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
+              <div className="absolute top-3 right-3 z-10">
+                <StatusBadge status={moduleStatuses.explorer} onChange={(status) => updateStatus('explorer', status)} />
+              </div>
+              <div className="relative flex flex-col justify-end h-full p-5 gap-1">
+                <div className="mb-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="material-symbols-outlined text-[#183B68] bg-[#7EC5B3] p-2 rounded-full backdrop-blur-sm">travel_explore</span>
+                </div>
+                <h4 className="text-white text-lg font-bold leading-tight">Career Explorer</h4>
+                <p className="text-slate-200 text-xs line-clamp-2">Discover career paths that match your degree and interests.</p>
               </div>
             </div>
 
@@ -228,7 +243,7 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               onClick={() => window.open("https://ai-mock.youthtoprofessionals.org", "_blank", "noopener,noreferrer")}
               className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDd7hH1pSuBFj5uKUCyjtxy4DewDDoPNs9dA2bEDyRlOX7OskAB1c_2y6lM4dKNbepW6YVeORfHKkQ4OFxyy5a42Bk4k3DszvoLqIfjq7xyD3CN7eBYnafJGfOM3Dxb_YF8HMkuCsC7lCeaeoKc0Ng2BpnxJ41utIguKfoy4RHGX-ro5ycd-jGegudFzqs-0wv4WmZ2v928tJIMVhnaW8yqY-DS4JgqJTLQnsxXdyqVlTpHcgpweJBDcZHkyLWZUyLBQxFCM7QyOPw")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/MockInterview.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.mock} onChange={(status) => updateStatus('mock', status)} />
@@ -243,7 +258,7 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
             </div>
 
             <div className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDwxucgFw-NZdmpZrJaniAKCXoqB_TRLSPBX-9UIY6mh-qMfGD1NpFDJNPZFKwRz_D5M1H7txM7S_a9UCfn2IiO7_PFvKGHVYtAOGm4bMZsG46L5PhaOQTZn_Eh-by9_NwkpdCcm3epFrcXRe32AfpmcbGlRExtPVcK_W_eVu7ZtIfgmEzXVwUc8ykcRMwvd3FAkr1EuSDAzHE0ZqjlmIHTpJe3shGJ7hG59UhawGx4ipsAlrdbgieNEBS4ZyFyIcqh1yC4rW-yXzI")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/MentoringPlan.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.mentoring} onChange={(status) => updateStatus('mentoring', status)} />
@@ -258,7 +273,7 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
             </div>
 
             <div className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer">
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBdzpv4i36XZp_1qruOwkAGRBAKIqXcmlaVPqVT_KNX09AKlGUjeIwcMilfNO1NRe9AzYiu4eho8uDTFNZEjsSSUQNCpm7OeJlvgADEje7AoQmFUELQm7Giy_jH6C4Pn01mE1bAd1lqHJEZ3gd3bC7sGUVBuhYwPgXBhedbGLOq30MRgAE8Ff2VEVstf16o7FgIxbskOhPPQIgXM1VWldiMX8hL6T_f0wV_wKfjA9q142sTbk_4DiJfcFO-8WMtPp-xDuu9DhwJUhM")' }}></div>
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/InfoInterview.png")' }}></div>
               <div className="absolute inset-0 bg-gradient-to-t from-[#183B68]/95 via-[#183B68]/40 to-[#183B68]/10"></div>
               <div className="absolute top-3 right-3 z-10">
                 <StatusBadge status={moduleStatuses.interview} onChange={(status) => updateStatus('interview', status)} />

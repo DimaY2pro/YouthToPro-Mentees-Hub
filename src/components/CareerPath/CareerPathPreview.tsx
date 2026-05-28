@@ -35,7 +35,6 @@ export default function CareerPathPreview({ draft, onEditRoadmap }: Props) {
   const [showReview,  setShowReview]  = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [downloading, setDownloading] = useState(false);
-  const [copied,      setCopied]      = useState(false);
 
   const handleReview = async () => {
     setReviewing(true);
@@ -67,17 +66,6 @@ export default function CareerPathPreview({ draft, onEditRoadmap }: Props) {
     }
   };
 
-  const handleCopy = () => {
-    const text = STAGE_CONFIGS.map((c) => {
-      const s = draft.stages[c.key as keyof typeof draft.stages];
-      return `=== ${c.label} (${c.timeframe}) ===\nRole: ${s.roleTitle}\n${s.roleDescription}\nMilestones:\n${s.milestones.filter(Boolean).map((m) => `• ${m}`).join('\n')}\nSkills:\n${s.skills.filter(Boolean).map((sk) => `• ${sk}`).join('\n')}`;
-    }).join('\n\n');
-    const full = `CAREER PATH ROADMAP\n${draft.fullName} | ${draft.careerTitle}\n\nVision: ${draft.careerVision}\n\n${text}`;
-    navigator.clipboard.writeText(full);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const ROW_LABELS = [
     { label: 'Role / Job Title',             getter: (s: typeof draft.stages.entry) => s.roleTitle },
     { label: 'What the Role Entails',        getter: (s: typeof draft.stages.entry) => s.roleDescription },
@@ -106,10 +94,7 @@ export default function CareerPathPreview({ draft, onEditRoadmap }: Props) {
           <span className="material-symbols-outlined text-[16px]">{downloading ? 'progress_activity' : 'download'}</span>
           {downloading ? 'Generating…' : 'Download as Word (.docx)'}
         </button>
-        <button onClick={handleCopy} className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors">
-          <span className="material-symbols-outlined text-[16px]">{copied ? 'check' : 'content_copy'}</span>
-          {copied ? 'Copied!' : 'Copy to Clipboard'}
-        </button>
+
       </div>
 
       {reviewError && <p className="text-red-500 text-sm">{reviewError}</p>}

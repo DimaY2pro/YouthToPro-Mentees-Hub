@@ -462,6 +462,32 @@ export const loadCareerPathDraft = async (uid: string): Promise<CareerPathDraft 
   return snap.data() as CareerPathDraft;
 };
 
+// ── Firestore: mentee extended profile ───────────────────────────────────────
+
+export interface MenteeProfile {
+  fullName: string;
+  phone: string;
+  location: string;
+  bio: string;
+  industry: string;
+  careerGoal: string;
+  linkedIn: string;
+  university: string;
+  major: string;
+  minor: string;
+  gpa: string;
+}
+
+export const saveMenteeProfile = async (uid: string, data: MenteeProfile) => {
+  await updateDoc(doc(db, 'users', uid), { menteeProfile: data });
+};
+
+export const loadMenteeProfile = async (uid: string): Promise<MenteeProfile | null> => {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return null;
+  return (snap.data().menteeProfile as MenteeProfile) ?? null;
+};
+
 export const saveLOIDraft = async (uid: string, draft: Omit<LOIDraft, 'lastSaved'>) => {
   await setDoc(
     doc(db, 'users', uid, 'loi_drafts', 'current'),

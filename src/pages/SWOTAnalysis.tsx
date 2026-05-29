@@ -212,8 +212,13 @@ export default function SWOTAnalysis({ user, profile }: Props) {
       });
       setResponses(init);
       setSection('strengths');
-    } catch {
-      setError('Could not generate SWOT questions. Please check your API key and try again.');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      setError(
+        msg.includes('key') || msg.includes('auth') || msg.includes('No Anthropic') || !msg
+          ? 'API key not loaded. Stop the dev server (Ctrl+C) and run npm run dev again, then retry.'
+          : `Could not generate SWOT questions: ${msg}`
+      );
     } finally {
       setLoading(false);
     }

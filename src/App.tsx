@@ -34,6 +34,7 @@ import LetterOfIntent      from './pages/LetterOfIntent';
 import CareerPath          from './pages/CareerPath';
 import CareerExplorerPage  from './pages/CareerExplorerPage';
 import SWOTAnalysis        from './pages/SWOTAnalysis';
+import MockInterview        from './pages/MockInterview';
 import { ApprovedRoute, AdminRoute } from './components/ProtectedRoute';
 import { useUserProfile } from './hooks/useUserProfile';
 
@@ -491,6 +492,11 @@ function Layout() {
         <Route path="/modules/swot" element={
           <ApprovedRoute user={user} profile={profile} loading={loading}>
             <SWOTAnalysis user={user} profile={profile} />
+          </ApprovedRoute>
+        } />
+        <Route path="/modules/mock-interview" element={
+          <ApprovedRoute user={user} profile={profile} loading={loading}>
+            <MockInterview user={user} profile={profile} />
           </ApprovedRoute>
         } />
         <Route path="/admin-console" element={

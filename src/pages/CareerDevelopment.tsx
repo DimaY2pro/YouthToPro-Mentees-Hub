@@ -239,8 +239,8 @@ export default function CareerDevelopment({ user, profile }: CareerDevelopmentPr
               </div>
             </div>
 
-            <div 
-              onClick={() => window.open("https://ai-mock.youthtoprofessionals.org", "_blank", "noopener,noreferrer")}
+            <div
+              onClick={() => navigate('/modules/mock-interview')}
               className="group relative flex flex-col gap-3 rounded-xl overflow-hidden aspect-[4/3] shadow-md hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
             >
               <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: 'url("/MockInterview.png")' }}></div>
